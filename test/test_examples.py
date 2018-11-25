@@ -38,14 +38,14 @@ def name_generator(__ctr=[0]):
     return 'testfile_%d' % __ctr[0]
 
 @pytest.fixture(params=['asyncio', 'trio'])
-def aio_args(request):
-    return ['--aio', request.param]
+def aio(request):
+    return request.param
 
-def test_lltest(tmpdir, aio_args):
+def test_hello(tmpdir, aio):
     mnt_dir = str(tmpdir)
     cmdline = [sys.executable,
-               os.path.join(basename, 'examples', 'lltest.py'),
-               mnt_dir] + aio_args
+               os.path.join(basename, 'examples', 'hello_asyncio.py' if aio == 'asyncio' else 'hello.py'),
+               mnt_dir]
     mount_process = subprocess.Popen(cmdline, stdin=subprocess.DEVNULL,
                                      universal_newlines=True)
     try:
@@ -66,11 +66,11 @@ def test_lltest(tmpdir, aio_args):
     else:
         umount(mount_process, mnt_dir)
 
-def test_tmpfs(tmpdir, aio_args):
+def test_tmpfs(tmpdir):
     mnt_dir = str(tmpdir)
     cmdline = [sys.executable,
                os.path.join(basename, 'examples', 'tmpfs.py'),
-               mnt_dir] + aio_args
+               mnt_dir]
     mount_process = subprocess.Popen(cmdline, stdin=subprocess.DEVNULL,
                                      universal_newlines=True)
     try:
@@ -94,12 +94,12 @@ def test_tmpfs(tmpdir, aio_args):
     else:
         umount(mount_process, mnt_dir)
 
-def test_passthroughfs(tmpdir, aio_args):
+def test_passthroughfs(tmpdir):
     mnt_dir = str(tmpdir.mkdir('mnt'))
     src_dir = str(tmpdir.mkdir('src'))
     cmdline = [sys.executable,
                os.path.join(basename, 'examples', 'passthroughfs.py'),
-               src_dir, mnt_dir] + aio_args
+               src_dir, mnt_dir]
     mount_process = subprocess.Popen(cmdline, stdin=subprocess.DEVNULL,
                                      universal_newlines=True)
     try:

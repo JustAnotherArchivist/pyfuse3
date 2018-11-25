@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-lltest.py - Example file system for pyfuse3.
+hello.py - Example file system for pyfuse3.
 
 This program presents a static file system containing a single file.
 
@@ -33,7 +33,6 @@ if (os.path.exists(os.path.join(basedir, 'setup.py')) and
     sys.path.insert(0, os.path.join(basedir, 'src'))
 
 from argparse import ArgumentParser
-import asyncio
 import stat
 import logging
 import errno
@@ -132,8 +131,6 @@ def parse_args():
                         help='Enable debugging output')
     parser.add_argument('--debug-fuse', action='store_true', default=False,
                         help='Enable FUSE debugging output')
-    parser.add_argument('--aio', choices=('asyncio', 'trio'), default='trio',
-                        help='Choose the asynchronous I/O implementation')
     return parser.parse_args()
 
 
@@ -143,19 +140,12 @@ def main():
 
     testfs = TestFs()
     fuse_options = set(pyfuse3.default_options)
-    fuse_options.add('fsname=lltest')
+    fuse_options.add('fsname=hello')
     if options.debug_fuse:
         fuse_options.add('debug')
     pyfuse3.init(testfs, options.mountpoint, fuse_options)
     try:
-        if options.aio == 'trio':
-            trio.run(pyfuse3.main)
-        else:
-            loop = asyncio.get_event_loop()
-            try:
-                loop.run_until_complete(pyfuse3.main(aio='asyncio'))
-            finally:
-                loop.close()
+        trio.run(pyfuse3.main)
     except:
         pyfuse3.close(unmount=False)
         raise
