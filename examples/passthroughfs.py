@@ -51,6 +51,7 @@ if (os.path.exists(os.path.join(basedir, 'setup.py')) and
 
 import pyfuse3
 from argparse import ArgumentParser
+import asyncio
 import errno
 import logging
 import stat as stat_m
@@ -448,6 +449,8 @@ def parse_args(args):
                         help='Enable debugging output')
     parser.add_argument('--debug-fuse', action='store_true', default=False,
                         help='Enable FUSE debugging output')
+    parser.add_argument('--aio', choices=('asyncio', 'trio'), default='trio',
+                        help='Choose the asynchronous I/O implementation')
 
     return parser.parse_args(args)
 
@@ -465,7 +468,14 @@ def main():
 
     try:
         log.debug('Entering main loop..')
-        trio.run(pyfuse3.main)
+        if options.aio == 'trio':
+            trio.run(pyfuse3.main)
+        else:
+            loop = asyncio.get_event_loop()
+            try:
+                loop.run_until_complete(pyfuse3.main(aio='asyncio'))
+            finally:
+                loop.close()
     except:
         pyfuse3.close(unmount=False)
         raise

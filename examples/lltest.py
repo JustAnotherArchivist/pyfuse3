@@ -33,6 +33,7 @@ if (os.path.exists(os.path.join(basedir, 'setup.py')) and
     sys.path.insert(0, os.path.join(basedir, 'src'))
 
 from argparse import ArgumentParser
+import asyncio
 import stat
 import logging
 import errno
@@ -131,6 +132,8 @@ def parse_args():
                         help='Enable debugging output')
     parser.add_argument('--debug-fuse', action='store_true', default=False,
                         help='Enable FUSE debugging output')
+    parser.add_argument('--aio', choices=('asyncio', 'trio'), default='trio',
+                        help='Choose the asynchronous I/O implementation')
     return parser.parse_args()
 
 
@@ -145,7 +148,14 @@ def main():
         fuse_options.add('debug')
     pyfuse3.init(testfs, options.mountpoint, fuse_options)
     try:
-        trio.run(pyfuse3.main)
+        if options.aio == 'trio':
+            trio.run(pyfuse3.main)
+        else:
+            loop = asyncio.get_event_loop()
+            try:
+                loop.run_until_complete(pyfuse3.main(aio='asyncio'))
+            finally:
+                loop.close()
     except:
         pyfuse3.close(unmount=False)
         raise
